@@ -1,12 +1,13 @@
 ---
 - name: Install apache2-packages
+  become: true
   ansible.builtin.apt:
     name: "{{ apache2_packages_combined }}"
     state: present
     update_cache: true
-  tags: [install]
 
 - name: Enable/Disable apache2 modules
+  become: true
   community.general.apache2_module:
     name: "{{ item.name }}"
     state: "{{ item.state | default(omit) }}"
@@ -14,51 +15,51 @@
     ignore_configcheck: "{{ item.ignore_configcheck | default(omit) }}"
     identifier: "{{ item.identifier | default(omit) }}"
   loop: "{{ apache2_modules }}"
-  tags: [config]
 
 - name: Start and enable apache2
+  become: true
   ansible.builtin.service:
     name: apache2
     state: started
     enabled: true
-  tags: [install]
 
 - name: Set ServerSignature
+  become: true
   ansible.builtin.lineinfile:
     dest: /etc/apache2/conf-available/security.conf
     line: ServerSignature {{ apache2_serversignature }}
     regexp: ^ServerSignature
-  tags: [config]
 
 - name: Set ServerTokens
+  become: true
   ansible.builtin.lineinfile:
     dest: /etc/apache2/conf-available/security.conf
     line: ServerTokens {{ apache2_servertokens }}
     regexp: ^ServerTokens
-  tags: [config]
 
 - name: Set SSL protocols
+  become: true
   ansible.builtin.lineinfile:
     dest: /etc/apache2/mods-available/ssl.conf
     regexp: '"^\s?SSLProtocol"'
     line: " SSLProtocol {{ apache2_sslproto }}"
-  tags: [config]
 
 - name: Set SSL ciphers
+  become: true
   ansible.builtin.lineinfile:
     dest: /etc/apache2/mods-available/ssl.conf
     regexp: '"^\s?SSLCipherSuite"'
     line: " SSLCipherSuite {{ apache2_sslciphers }}"
-  tags: [config]
 
 - name: Set SSLHonorCipherOrder
+  become: true
   ansible.builtin.lineinfile:
     dest: /etc/apache2/mods-available/ssl.conf
     regexp: '"^\s?#?SSLHonorCipherOrder"'
     line: " SSLHonorCipherOrder on"
-  tags: [config]
 
 - name: Create webroot
+  become: true
   ansible.builtin.file:
     path: "{{ apache2_vhost_dir }}/{{ item.name }}"
     state: directory
@@ -67,18 +68,18 @@
     recurse: true
   loop: "{{ apache2_vhosts }}"
   when: item.name is defined and (item.vhost_dir | default(True))
-  tags: [config]
 
 - name: Create vhosts
+  become: true
   ansible.builtin.template:
     src: "{{ item.vhost_template | default('vhost.conf.j2') }}"
     dest: /etc/apache2/sites-available/{{ item.name }}.conf
   loop: "{{ apache2_vhosts }}"
   when: item.name is defined
   notify: Restart apache2
-  tags: [config]
 
 - name: Enable vhosts
+  become: true
   ansible.builtin.file:
     src: /etc/apache2/sites-available/{{ item.name }}.conf
     dest: /etc/apache2/sites-enabled/{{ item.name }}.conf
@@ -86,9 +87,9 @@
   loop: "{{ apache2_vhosts }}"
   when: (item.enabled | default(True))
   notify: Restart apache2
-  tags: [config]
 
 - name: Disable vhosts
+  become: true
   ansible.builtin.file:
     dest: /etc/apache2/sites-enabled/{{ item.owner }}-{{ item.name }}.conf
     state: absent
@@ -96,9 +97,9 @@
   when: (item.enabled is defined and not item.enabled)
   ignore_errors: true
   notify: Restart apache2
-  tags: [config]
 
 - name: Disable default vhosts
+  become: true
   ansible.builtin.file:
     dest: /etc/apache2/sites-enabled/{{ item }}
     state: absent
@@ -106,9 +107,9 @@
     - "000-default.conf"
     - default-ssl.conf
   notify: Restart apache2
-  tags: [config]
 
 - name: Create vhost dirs
+  become: true
   ansible.builtin.file:
     dest: "{{ apache2_vhost_dir }}/{{ item.name }}"
     owner: "{{ item.owner | default('www-data') }}"
@@ -116,9 +117,9 @@
     mode: "{{ item.mode | default('0755') }}"
     state: directory
   loop: "{{ apache2_vhosts }}"
-  tags: [config]
 
 - name: Copy certs
+  become: true
   ansible.builtin.copy:
     src: "{{ item.cert }}"
     dest: "{{ apache2_ssl_cert_path }}/{{ item.cert | basename }}"
@@ -126,9 +127,9 @@
   loop: "{{ apache2_vhosts }}"
   when: item.copycerts is defined and item.copycerts
   notify: Restart apache2
-  tags: [config]
 
 - name: Copy keys
+  become: true
   ansible.builtin.copy:
     src: "{{ item.key }}"
     dest: "{{ apache2_ssl_key_path }}/{{ item.key | basename }}"
@@ -136,9 +137,9 @@
   loop: "{{ apache2_vhosts }}"
   when: item.copycerts is defined and item.copycerts
   notify: Restart apache2
-  tags: [config]
 
 - name: Copy certchain
+  become: true
   ansible.builtin.copy:
     src: "{{ item.certchain }}"
     dest: "{{ apache2_ssl_cert_path }}/{{ item.certchain | basename }}"
@@ -147,4 +148,3 @@
     - item.copycerts is defined and item.copycerts
     - item.certchain is defined
   notify: Restart apache2
-  tags: [config]

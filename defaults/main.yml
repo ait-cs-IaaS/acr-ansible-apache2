@@ -6,15 +6,27 @@ apache2_packages:
 apache2_additional_packages: []
 apache2_packages_combined: "{{ apache2_base_packages + apache2_packages + apache2_additional_packages }}"
 
-apache2_modules: []
 apache2_sslciphers: 
   ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256
 apache2_sslproto: all -SSLv3 -TLSv1 -TLSv1.1
 apache2_servertokens: Prod
 apache2_serversignature: "Off"
 apache2_vhost_dir: /var/www
-apache2_ssl_cert_path: /etc/ssl/certs
-apache2_ssl_key_path: /etc/ssl/private
 apache2_vhosts: []
 apache2_user: www-data
 apache2_group: www-data
+
+apache2_vhost_template: vhost.conf.j2
+apache2_ssl: false
+apache2_ssl_cert: ssl-cert-snakeoil.pem
+apache2_ssl_key: ssl-cert-snakeoil.key
+apache2_ssl_copycerts: false
+apache2_ssl_cert_path: /etc/ssl/
+apache2_ssl_key_path: /etc/ssl/
+apache2_modules:
+  - name: rewrite
+  - name: deflate
+  - name: headers
+  - name: ssl
+  - name: authz_host
+  - name: remoteip
